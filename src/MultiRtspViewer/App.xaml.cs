@@ -10,20 +10,23 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
-        base.OnStartup(e);
-        // Initialize LibVLCSharp
-        Core.Initialize();
-
-        // Initialize Database & Run Migration
         try 
         {
+            base.OnStartup(e);
+            
+            // Initialize LibVLCSharp
+            Core.Initialize();
+
+            // Initialize Database & Run Migration
             var configService = new Services.ConfigService();
             var migrationService = new Services.Database.DatabaseMigrationService(configService);
             migrationService.Initialize();
         }
         catch (System.Exception ex)
         {
-            MessageBox.Show($"Database initialization failed: {ex.Message}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Application failed to start.\n\nError: {ex.Message}", 
+                "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Environment.Exit(1);
         }
     }
 }

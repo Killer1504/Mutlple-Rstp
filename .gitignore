@@ -52,3 +52,7 @@ Desktop.ini
 .agent/scratchpad/
 .agent/logs/
 *.swp
+
+## [Build Scripts]
+release-debug/
+release/
