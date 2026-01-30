@@ -1,0 +1,54 @@
+## [Visual Studio]
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.v12.suo
+*.v11.suo
+*.v10.suo
+
+## [NuGet]
+packages/
+*.nupkg
+# NuGet Restore
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## [Build results]
+[Rr]elease/
+[Dd]ebug/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+[Bb]uild/
+*.exe
+*.dll
+*.pdb
+*.msi
+*.msix
+*.msm
+*.msp
+
+## [C# / .NET]
+*.TMP
+*.log
+*.cache
+*.db
+*.suo
+
+## [Common OS Files]
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+## [Antigravity / AI]
+.agent/scratchpad/
+.agent/logs/
+*.swp
