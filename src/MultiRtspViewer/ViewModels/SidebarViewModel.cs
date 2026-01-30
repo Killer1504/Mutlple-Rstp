@@ -107,5 +107,14 @@ namespace MultiRtspViewer.ViewModels
                 LoadClients();
             }
         }
+        [RelayCommand]
+        public void OpenAbout()
+        {
+            var dialog = new Views.AboutDialog
+            {
+                Owner = Application.Current.MainWindow
+            };
+            dialog.ShowDialog();
+        }
     }
 }

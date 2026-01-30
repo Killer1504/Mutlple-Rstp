@@ -8,7 +8,9 @@
         xmlns:views="clr-namespace:MultiRtspViewer.Views"
         mc:Ignorable="d"
         Title="MultiRtspViewer" Height="720" Width="1280"
-        Background="#0f172a" WindowStartupLocation="CenterScreen">
+        Background="#0f172a" WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing"
+        Icon="/Assets/icon.png">
     
     <Window.Resources>
         <Style x:Key="LayoutButtonStyle" TargetType="RadioButton">
@@ -48,10 +50,44 @@
             <ColumnDefinition Width="Auto"/> <!-- Mgmt Panel -->
         </Grid.ColumnDefinitions>
 
-        <!-- Sidebar Container (to handle visibility vs DataContext) -->
-        <Border Grid.Column="0" Width="260" 
-                Visibility="{Binding IsSidebarVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+        <!-- Sidebar Container (Animated) -->
+        <Border Grid.Column="0" ClipToBounds="True">
             <views:SidebarView DataContext="{Binding Sidebar}"/>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Width" Value="260"/>
+                    <Setter Property="Opacity" Value="1"/>
+                    <Style.Triggers>
+                        <!-- When IsSidebarVisible becomes False (Collapse) -->
+                        <DataTrigger Binding="{Binding IsSidebarVisible}" Value="False">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Width" To="0" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Width" To="260" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.3"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
         </Border>
 
         <!-- Main Content -->

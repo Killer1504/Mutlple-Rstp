@@ -27,5 +27,24 @@ namespace MultiRtspViewer
                 }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var result = MessageBox.Show("Are you sure you want to exit?", "Confirm Exit", 
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.No)
+            {
+                e.Cancel = true;
+            }
+            else
+            {
+                // Ensure proper disposal
+                if (DataContext is MainViewModel viewModel)
+                {
+                    viewModel.Dispose();
+                }
+            }
+        }
     }
 }

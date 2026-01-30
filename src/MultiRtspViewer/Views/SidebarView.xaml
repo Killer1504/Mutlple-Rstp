@@ -128,5 +128,35 @@
                 </Style>
             </ListBox.ItemContainerStyle>
         </ListBox>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Padding="15" BorderBrush="#334155" BorderThickness="0,1,0,0">
+            <Button Command="{Binding OpenAboutCommand}" 
+                    Background="Transparent" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="ℹ" Foreground="#64748b" FontSize="14" Margin="0,0,8,0"/>
+                    <TextBlock Text="About RTSP Viewer" Foreground="#64748b" FontSize="12"/>
+                </StackPanel>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Border>
     </Grid>
 </UserControl>
