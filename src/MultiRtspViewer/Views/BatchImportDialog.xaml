@@ -1,0 +1,152 @@
+<Window x:Class="MultiRtspViewer.Views.BatchImportDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:MultiRtspViewer.ViewModels"
+        Title="Batch Import Cameras" 
+        Height="500" Width="600"
+        WindowStartupLocation="CenterOwner"
+        Background="#0f172a"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True">
+    
+    <Window.DataContext>
+        <vm:BatchImportViewModel/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <Style x:Key="CyberTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="#1e293b"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="CaretBrush" Value="#22d3ee"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="#22d3ee"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#22d3ee"/>
+            <Setter Property="Foreground" Value="#0f172a"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="24,12"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#06b6d4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94a3b8"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="24,12"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1e293b"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border BorderBrush="#22d3ee" BorderThickness="1" CornerRadius="8">
+        <Grid Margin="30">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                <TextBlock FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,0,0,5">
+                    <Run Text="BATCH" Foreground="#22d3ee"/>
+                    <Run Text="IMPORT"/>
+                </TextBlock>
+                <TextBlock Text="Paste your RTSP URLs below (one per line)" Foreground="#64748b" FontSize="13"/>
+            </StackPanel>
+
+            <!-- Instructions -->
+            <Border Grid.Row="1" Background="#1e293b" Padding="12" CornerRadius="6" Margin="0,0,0,15">
+                <StackPanel>
+                    <TextBlock Text="SUPPORTED FORMATS:" Foreground="#22d3ee" FontSize="11" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Foreground="#94a3b8" FontSize="11" FontFamily="Consolas">
+                        <Run Text="rtsp://host:port/path" /> <LineBreak/>
+                        <Run Text="Camera Name | rtsp://host:port/path" />
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <!-- Text Area -->
+            <TextBox Grid.Row="2" 
+                     Text="{Binding RawText, UpdateSourceTrigger=PropertyChanged}" 
+                     Style="{StaticResource CyberTextBox}" />
+
+            <!-- Summary -->
+            <TextBlock Grid.Row="3" 
+                       Text="{Binding ValidationSummary}" 
+                       Foreground="#22d3ee" 
+                       FontSize="12" 
+                       Margin="0,15,0,0"/>
+
+            <!-- Actions -->
+            <Grid Grid.Row="4" Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="1" Content="Cancel" Style="{StaticResource SecondaryButton}" Click="CancelButton_Click" Margin="0,0,10,0"/>
+                <Button Grid.Column="2" Content="Import Cameras" Style="{StaticResource PrimaryButton}" Click="ConfirmButton_Click"/>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

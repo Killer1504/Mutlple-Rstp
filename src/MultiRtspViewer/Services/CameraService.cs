@@ -78,5 +78,25 @@ namespace MultiRtspViewer.Services
                 db.SaveChanges();
             }
         }
+        public List<Camera> AddCamerasBulk(int clientId, IEnumerable<(string name, string url)> cameraSettings)
+        {
+            using (var db = new AppDbContext())
+            {
+                var newCameras = new List<Camera>();
+                foreach (var (name, url) in cameraSettings)
+                {
+                    var camera = new Camera
+                    {
+                        ClientId = clientId,
+                        Name = name,
+                        RtspUrl = url
+                    };
+                    db.Cameras.Add(camera);
+                    newCameras.Add(camera);
+                }
+                db.SaveChanges();
+                return newCameras;
+            }
+        }
     }
 }

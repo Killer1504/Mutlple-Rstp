@@ -164,6 +164,16 @@
                             </Button.Resources>
                         </Button>
 
+                        <Button Content="++ BATCH" Command="{Binding BatchAddCameraCommand}" 
+                                Background="#1e293b" Foreground="#22d3ee" FontWeight="Bold" Padding="15,5" 
+                                BorderThickness="1" BorderBrush="#22d3ee" Margin="0,0,10,0" ToolTip="Bulk import RTSP URLs">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
                         <Button Content="+ ADD CAMERA" Command="{Binding AddCameraCommand}" 
                                 Background="#22d3ee" Foreground="#0f172a" FontWeight="Bold" Padding="15,5" BorderThickness="0">
                             <Button.Resources>

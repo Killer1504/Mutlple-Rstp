@@ -131,25 +131,42 @@ namespace MultiRtspViewer.ViewModels
                 
                 // IDB Insert
                 var dbCam = _cameraService.AddCamera(Sidebar.SelectedClient.Id, vm.CameraName.Trim(), vm.RtspUrl.Trim());
-
-                var model = new CameraModel 
-                { 
-                    Id = dbCam.Id.ToString(),
-                    Name = dbCam.Name,
-                    RtspUrl = dbCam.RtspUrl
-                };
                 
-                var cameraVm = new CameraViewModel(model, _libVLC);
-                Cameras.Add(cameraVm);
+                // Refresh
+                LoadCameras(autoPlay: true);
                 
-                // Auto-play the newly added camera
-                cameraVm.Play();
-                
-                // Update Client Camera Count UI
+                // Update Sidebar Count
                 Sidebar.SelectedClient.CameraCount++;
+            }
+        }
 
-                UpdateLayout();
-                OnPropertyChanged(nameof(HasNoCameras));
+        [RelayCommand]
+        public void BatchAddCamera()
+        {
+            if (Sidebar.SelectedClient == null)
+            {
+                System.Windows.MessageBox.Show("Please select a Client first.", "No Client Selected");
+                return;
+            }
+
+            var dialog = new Views.BatchImportDialog
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var cameras = dialog.ViewModel.GetParsedCameras();
+                if (cameras.Any())
+                {
+                    _cameraService.AddCamerasBulk(Sidebar.SelectedClient.Id, cameras);
+                    
+                    // Refresh
+                    LoadCameras(autoPlay: true);
+                    
+                    // Update Sidebar Count (simplest way is to reload clients or sum)
+                    Sidebar.LoadClients(Sidebar.SelectedClient.Id);
+                }
             }
         }
 
