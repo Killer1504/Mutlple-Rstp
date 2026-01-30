@@ -1,0 +1,137 @@
+﻿<Window x:Class="MultiRtspViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MultiRtspViewer"
+        xmlns:vm="clr-namespace:MultiRtspViewer.ViewModels"
+        xmlns:views="clr-namespace:MultiRtspViewer.Views"
+        mc:Ignorable="d"
+        Title="MultiRtspViewer" Height="720" Width="1280"
+        Background="#0f172a" WindowStartupLocation="CenterScreen">
+    
+    <Window.Resources>
+        <Style x:Key="LayoutButtonStyle" TargetType="RadioButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94a3b8"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="#334155" BorderThickness="1" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" Value="#334155"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1e293b"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Main Content -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Header -->
+                <RowDefinition Height="*"/>    <!-- Video Grid -->
+                <RowDefinition Height="Auto"/> <!-- StatusBar -->
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Background="#1e293b" Padding="15" BorderBrush="#334155" BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Title -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="RTSP" FontWeight="Bold" FontSize="20" Foreground="#22d3ee" Margin="0,0,5,0"/>
+                        <TextBlock Text="VIEWER" FontWeight="Light" FontSize="20" Foreground="White"/>
+                    </StackPanel>
+
+                    <!-- Layout Controls -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <TextBlock Text="LAYOUT:" VerticalAlignment="Center" Foreground="#94a3b8" Margin="0,0,10,0"/>
+                        
+                        <RadioButton Content="1x1" Command="{Binding SetLayoutCommand}" CommandParameter="1x1" 
+                                     Style="{StaticResource LayoutButtonStyle}"/>
+                        <RadioButton Content="2x2" Command="{Binding SetLayoutCommand}" CommandParameter="2x2" 
+                                     Style="{StaticResource LayoutButtonStyle}" IsChecked="True"/>
+                        <RadioButton Content="3x3" Command="{Binding SetLayoutCommand}" CommandParameter="3x3" 
+                                     Style="{StaticResource LayoutButtonStyle}"/>
+                        <RadioButton Content="4x4" Command="{Binding SetLayoutCommand}" CommandParameter="4x4" 
+                                     Style="{StaticResource LayoutButtonStyle}"/>
+                        <RadioButton Content="Auto" Command="{Binding SetLayoutCommand}" CommandParameter="Auto" 
+                                     Style="{StaticResource LayoutButtonStyle}"/>
+                        
+                        <Border Width="1" Background="#334155" Margin="10,5"/>
+
+                        <Button Content="⚙ MANAGE" Command="{Binding ToggleManagementPanelCommand}" 
+                                Background="{Binding IsManagementPanelVisible, Converter={StaticResource BoolToManageButtonColorConverter}}"
+                                Foreground="White" FontWeight="Bold" Padding="15,5" BorderThickness="0" Margin="0,0,5,0">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
+                        <Button Content="+ ADD CAMERA" Command="{Binding AddCameraCommand}" 
+                                Background="#22d3ee" Foreground="#0f172a" FontWeight="Bold" Padding="15,5" BorderThickness="0">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Dynamic Grid -->
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Cameras}" Margin="10">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Rows="{Binding Rows}" Columns="{Binding Columns}"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <views:CameraView DataContext="{Binding}" Margin="5"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </Grid>
+
+        <!-- Management Panel (Collapsible) -->
+        <Border Grid.Column="1" 
+                Width="350" 
+                BorderBrush="#334155" 
+                BorderThickness="1,0,0,0"
+                Visibility="{Binding IsManagementPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <views:CameraManagementPanel DataContext="{Binding}"/>
+        </Border>
+    </Grid>
+</Window>

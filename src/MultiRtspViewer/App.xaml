@@ -1,0 +1,16 @@
+﻿<Application x:Class="MultiRtspViewer.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:MultiRtspViewer"
+             xmlns:helpers="clr-namespace:MultiRtspViewer.Helpers"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <helpers:StatusToColorConverter x:Key="StatusToColorConverter"/>
+            <helpers:StatusToVisibilityConverter x:Key="StatusToVisibilityConverter"/>
+            <helpers:BoolToColorConverter x:Key="BoolToColorConverter"/>
+            <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+            <helpers:BoolToManageButtonColorConverter x:Key="BoolToManageButtonColorConverter"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
