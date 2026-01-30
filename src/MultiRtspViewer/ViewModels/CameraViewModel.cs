@@ -140,6 +140,15 @@ namespace MultiRtspViewer.ViewModels
                     {
                         media.AddOption(":no-audio");
                     }
+
+                    if (_settings.LowMemoryMode)
+                    {
+                        media.AddOption(":avcodec-skip-idct=4");      // Fastest/Lowest RAM IDCT
+                        media.AddOption(":avcodec-skiploopfilter=4"); // Skip deblocking
+                        media.AddOption(":avcodec-fast");              // Enable fast-path
+                        media.AddOption(":no-overlay");                // Disable visual overlays in VLC
+                        media.AddOption(":no-snapshot");               // Disable frame capturing
+                    }
                 }
                 
                 _mediaPlayer.Play(media);

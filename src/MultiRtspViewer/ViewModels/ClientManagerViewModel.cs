@@ -58,7 +58,12 @@ namespace MultiRtspViewer.ViewModels
             
             // Using AddClientDialog as a proxy for Rename:
             var vm = new AddClientViewModel { ClientName = client.Name };
-            var dialog = new Views.AddClientDialog { DataContext = vm, Title = "Rename Client" }; // Override Title locally?
+            var dialog = new Views.AddClientDialog 
+            { 
+                DataContext = vm, 
+                Title = "Rename Client",
+                Owner = Application.Current.MainWindow // Ensure centering works
+            }; 
             
             if (dialog.ShowDialog() == true)
             {

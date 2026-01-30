@@ -24,6 +24,9 @@ namespace MultiRtspViewer.Models
         [ObservableProperty]
         private int clockJitter = 0;
 
+        [ObservableProperty]
+        private bool lowMemoryMode = false;
+
         public static AppSettings Load()
         {
             if (File.Exists(SettingsPath))
