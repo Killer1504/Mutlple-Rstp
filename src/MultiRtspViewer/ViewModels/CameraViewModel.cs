@@ -49,7 +49,7 @@ namespace MultiRtspViewer.ViewModels
         private void UpdateStatus(string status)
         {
             // Ensure UI update happens on the main thread
-            Application.Current?.Dispatcher.Invoke(() => Model.Status = status);
+            Application.Current?.Dispatcher.InvokeAsync(() => Model.Status = status);
         }
 
         private void HandleDisconnection(string reason)

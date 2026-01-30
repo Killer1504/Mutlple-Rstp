@@ -24,9 +24,13 @@ namespace MultiRtspViewer.ViewModels
             LoadClients();
         }
 
-        public void LoadClients()
+        public void LoadClients(int? selectId = null)
         {
             var dbClients = _clientService.GetAllClients();
+            
+            // Remember current selection if none specified
+            int? toSelect = selectId ?? SelectedClient?.Id;
+
             Clients.Clear();
             foreach (var dbClient in dbClients)
             {
@@ -39,22 +43,31 @@ namespace MultiRtspViewer.ViewModels
                 });
             }
 
-            // Auto-select first client if available
-            if (Clients.Count > 0)
+            // Select the preferred client, or fallback to first
+            if (toSelect.HasValue)
+            {
+                SelectedClient = Clients.FirstOrDefault(c => c.Id == toSelect.Value) ?? Clients.FirstOrDefault();
+            }
+            else if (Clients.Count > 0)
             {
                 SelectedClient = Clients[0];
+            }
+            else
+            {
+                SelectedClient = null;
             }
         }
 
         partial void OnSelectedClientChanged(ClientModel? value)
         {
             // Set IsSelected flag for UI styling
-            foreach (var client in Clients)
+            if (Clients != null)
             {
-                client.IsSelected = (client == value);
+                foreach (var client in Clients)
+                {
+                    client.IsSelected = (client == value);
+                }
             }
-            
-            // Notify MainViewModel (This will be wired up later via event or shared service)
         }
 
         [RelayCommand]
@@ -68,11 +81,10 @@ namespace MultiRtspViewer.ViewModels
             if (dialog.ShowDialog() == true)
             {
                 var vm = dialog.ViewModel;
-                var dbClient = _clientService.CreateClient(vm.ClientName.Trim(), ""); // CreateClient takes name, desc
-                LoadClients();
+                var dbClient = _clientService.CreateClient(vm.ClientName.Trim(), ""); 
                 
-                // Select the new client
-                SelectedClient = Clients.FirstOrDefault(c => c.Id == dbClient.Id);
+                // Load and select the new client specifically
+                LoadClients(dbClient.Id);
             }
         }
 
@@ -86,7 +98,7 @@ namespace MultiRtspViewer.ViewModels
             
             dialog.ShowDialog();
             
-            // Refresh list to reflect changes (Renames/Deletes)
+            // Refresh list but keep selection if possible
             LoadClients();
         }
 
@@ -104,7 +116,7 @@ namespace MultiRtspViewer.ViewModels
             if (result == MessageBoxResult.Yes)
             {
                 _clientService.DeleteClient(client.Id);
-                LoadClients();
+                LoadClients(); // This will auto-select the next available client
             }
         }
         [RelayCommand]
