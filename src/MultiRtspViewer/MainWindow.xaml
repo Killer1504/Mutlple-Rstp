@@ -43,12 +43,19 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/> <!-- Sidebar -->
+            <ColumnDefinition Width="*"/>    <!-- Main Content -->
+            <ColumnDefinition Width="Auto"/> <!-- Mgmt Panel -->
         </Grid.ColumnDefinitions>
 
+        <!-- Sidebar Container (to handle visibility vs DataContext) -->
+        <Border Grid.Column="0" Width="260" 
+                Visibility="{Binding IsSidebarVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <views:SidebarView DataContext="{Binding Sidebar}"/>
+        </Border>
+
         <!-- Main Content -->
-        <Grid Grid.Column="0">
+        <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/> <!-- Header -->
                 <RowDefinition Height="*"/>    <!-- Video Grid -->
@@ -65,9 +72,33 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Title -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="RTSP" FontWeight="Bold" FontSize="20" Foreground="#22d3ee" Margin="0,0,5,0"/>
-                        <TextBlock Text="VIEWER" FontWeight="Light" FontSize="20" Foreground="White"/>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Hamburger Menu Button -->
+                        <Button Command="{Binding ToggleSidebarCommand}" 
+                                Background="Transparent" BorderThickness="0" Margin="0,0,15,0" Cursor="Hand">
+                            <TextBlock Text="☰" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Opacity" Value="0.7"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <TextBlock Text="RTSP" FontWeight="Bold" FontSize="20" Foreground="#22d3ee" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="VIEWER" FontWeight="Light" FontSize="20" Foreground="White" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <!-- Layout Controls -->
@@ -126,7 +157,7 @@
         </Grid>
 
         <!-- Management Panel (Collapsible) -->
-        <Border Grid.Column="1" 
+        <Border Grid.Column="2" 
                 Width="350" 
                 BorderBrush="#334155" 
                 BorderThickness="1,0,0,0"

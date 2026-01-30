@@ -12,7 +12,7 @@ namespace MultiRtspViewer.ViewModels
     public partial class MainViewModel : ObservableObject, IDisposable
     {
         private readonly LibVLC _libVLC;
-        private readonly ConfigService _configService;
+        private readonly CameraService _cameraService;
 
         [ObservableProperty]
         private ObservableCollection<CameraViewModel> cameras = new();
@@ -26,28 +26,80 @@ namespace MultiRtspViewer.ViewModels
         [ObservableProperty]
         private bool isManagementPanelVisible = false;
 
+        [ObservableProperty]
+        private bool isSidebarVisible = true;
+
+        [RelayCommand]
+        public void ToggleSidebar()
+        {
+            IsSidebarVisible = !IsSidebarVisible;
+        }
+
         public bool HasNoCameras => Cameras.Count == 0;
 
+        public SidebarViewModel Sidebar { get; }
 
         public MainViewModel()
         {
-            _configService = new ConfigService();
+            Sidebar = new SidebarViewModel();
+            Sidebar.PropertyChanged += Sidebar_PropertyChanged;
+
+            _cameraService = new CameraService();
             
             // Enable hardware decoding
             _libVLC = new LibVLC("--avcodec-hw=d3d11va", "--network-caching=300");
 
-            LoadCameras();
+            if (Sidebar.SelectedClient != null)
+            {
+                LoadCameras(autoPlay: false); // Defer play until Window Loaded
+            }
         }
 
-        private void LoadCameras()
+        private void Sidebar_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            var savedCameras = _configService.LoadCameras();
-            foreach (var model in savedCameras)
+            if (e.PropertyName == nameof(SidebarViewModel.SelectedClient))
             {
+                LoadCameras(autoPlay: true);
+            }
+        }
+
+        private void LoadCameras(bool autoPlay = true)
+        {
+            // Clean up existing players
+            foreach (var cam in Cameras) { cam.Dispose(); }
+            Cameras.Clear();
+
+            if (Sidebar.SelectedClient == null) 
+            {
+                UpdateLayout();
+                OnPropertyChanged(nameof(HasNoCameras));
+                return;
+            }
+
+            var dbCameras = _cameraService.GetCamerasByClient(Sidebar.SelectedClient.Id);
+            
+            foreach (var dbCam in dbCameras)
+            {
+                var model = new CameraModel
+                {
+                    Id = dbCam.Id.ToString(), // Map DB ID to Model ID
+                    Name = dbCam.Name,
+                    RtspUrl = dbCam.RtspUrl,
+                    Status = "Offline"
+                };
+
                 var cameraVm = new CameraViewModel(model, _libVLC);
                 Cameras.Add(cameraVm);
             }
+            
+            // Only play if requested (runtime switch), otherwise wait for Window_Loaded
+            if (autoPlay)
+            {
+                foreach(var cam in Cameras) { cam.Play(); }
+            }
+
             UpdateLayout();
+            OnPropertyChanged(nameof(HasNoCameras));
         }
 
         // Call this after UI is loaded
@@ -62,6 +114,12 @@ namespace MultiRtspViewer.ViewModels
         [RelayCommand]
         public void AddCamera()
         {
+            if (Sidebar.SelectedClient == null)
+            {
+                System.Windows.MessageBox.Show("Please select a Client first.", "No Client Selected");
+                return;
+            }
+
             var dialog = new Views.AddCameraDialog
             {
                 Owner = System.Windows.Application.Current.MainWindow
@@ -70,29 +128,32 @@ namespace MultiRtspViewer.ViewModels
             if (dialog.ShowDialog() == true)
             {
                 var vm = dialog.ViewModel;
-                var newCamera = new CameraModel 
+                
+                // IDB Insert
+                var dbCam = _cameraService.AddCamera(Sidebar.SelectedClient.Id, vm.CameraName.Trim(), vm.RtspUrl.Trim());
+
+                var model = new CameraModel 
                 { 
-                    Name = vm.CameraName.Trim(),
-                    RtspUrl = vm.RtspUrl.Trim()
+                    Id = dbCam.Id.ToString(),
+                    Name = dbCam.Name,
+                    RtspUrl = dbCam.RtspUrl
                 };
                 
-                var cameraVm = new CameraViewModel(newCamera, _libVLC);
+                var cameraVm = new CameraViewModel(model, _libVLC);
                 Cameras.Add(cameraVm);
                 
                 // Auto-play the newly added camera
                 cameraVm.Play();
                 
-                SaveState();
+                // Update Client Camera Count UI
+                Sidebar.SelectedClient.CameraCount++;
+
                 UpdateLayout();
                 OnPropertyChanged(nameof(HasNoCameras));
             }
         }
 
-        private void SaveState()
-        {
-            var models = Cameras.Select(vm => vm.Model).ToList();
-            _configService.SaveCameras(models);
-        }
+
 
         [RelayCommand]
         public void SetLayout(string layoutType)
@@ -137,11 +198,23 @@ namespace MultiRtspViewer.ViewModels
                 cameraVm.Model.Name = vm.CameraName.Trim();
                 cameraVm.Model.RtspUrl = vm.RtspUrl.Trim();
                 
+                // DB Update
+                if (int.TryParse(cameraVm.Model.Id, out int camId))
+                {
+                    var dbCam = new Models.Database.Camera 
+                    {
+                        Id = camId,
+                        ClientId = Sidebar.SelectedClient?.Id ?? 0,
+                        Name = cameraVm.Model.Name,
+                        RtspUrl = cameraVm.Model.RtspUrl,
+                        Position = 0 // Should preserve existing position properly but simplifying for now
+                    };
+                    _cameraService.UpdateCamera(dbCam);
+                }
+
                 // Restart stream with new URL
                 cameraVm.Stop();
                 cameraVm.Play();
-                
-                SaveState();
             }
         }
 
@@ -156,9 +229,18 @@ namespace MultiRtspViewer.ViewModels
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
+                // DB Delete
+                if (int.TryParse(cameraVm.Model.Id, out int camId))
+                {
+                    _cameraService.DeleteCamera(camId);
+                }
+
                 cameraVm.Dispose();
                 Cameras.Remove(cameraVm);
-                SaveState();
+
+                // Update Client Count
+                if (Sidebar.SelectedClient != null) Sidebar.SelectedClient.CameraCount--;
+
                 UpdateLayout();
                 OnPropertyChanged(nameof(HasNoCameras));
             }
@@ -171,7 +253,7 @@ namespace MultiRtspViewer.ViewModels
             if (index > 0)
             {
                 Cameras.Move(index, index - 1);
-                SaveState();
+                SavePositions();
             }
         }
 
@@ -182,14 +264,26 @@ namespace MultiRtspViewer.ViewModels
             if (index < Cameras.Count - 1)
             {
                 Cameras.Move(index, index + 1);
-                SaveState();
+                SavePositions();
             }
+        }
+
+        private void SavePositions()
+        {
+            var dbCameras = new System.Collections.Generic.List<Models.Database.Camera>();
+            for(int i = 0; i < Cameras.Count; i++)
+            {
+                if (int.TryParse(Cameras[i].Model.Id, out int camId))
+                {
+                    dbCameras.Add(new Models.Database.Camera { Id = camId, Position = i });
+                }
+            }
+            _cameraService.UpdateCameraPositions(dbCameras);
         }
 
 
         public void Dispose()
         {
-            SaveState(); // Save on exit
             foreach (var cam in Cameras)
             {
                 cam.Dispose();
