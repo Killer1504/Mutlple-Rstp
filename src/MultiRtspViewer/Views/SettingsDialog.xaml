@@ -1,8 +1,10 @@
 <Window x:Class="MultiRtspViewer.Views.SettingsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:models="clr-namespace:MultiRtspViewer.Models"
         Title="Performance Settings" 
-        Height="480" Width="400"
+        Height="550" Width="450"
         WindowStartupLocation="CenterOwner"
         Background="#0f172a"
         Foreground="White"
@@ -10,6 +12,15 @@
         AllowsTransparency="True"
         BorderBrush="#22d3ee"
         BorderThickness="1">
+
+    <Window.Resources>
+        <ObjectDataProvider x:Key="AlertProviderEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="models:AlertProvider"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
 
     <Grid Margin="25">
         <Grid.RowDefinitions>
@@ -21,23 +32,112 @@
         <!-- Header -->
         <TextBlock Text="SYSTEM PERFORMANCE" FontSize="20" FontWeight="Bold" Foreground="#22d3ee" Margin="0,0,0,20"/>
 
-        <!-- Settings List -->
-        <StackPanel Grid.Row="1">
-            <TextBlock Text="Network Caching (ms)" Foreground="#94a3b8" Margin="0,0,0,5"/>
-            <TextBox Text="{Binding Settings.NetworkCaching}" Margin="0,0,0,15" Background="#1e293b" Foreground="White" BorderBrush="#334155" Padding="5"/>
+        <!-- Settings Tabs -->
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="0,0,0,10">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Foreground" Value="#94a3b8"/>
+                    <Setter Property="FontSize" Value="14"/>
+                    <Setter Property="Padding" Value="10,5"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border Name="Border" BorderThickness="0,0,0,2" BorderBrush="Transparent" Margin="0,0,10,0">
+                                    <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="10,5"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="BorderBrush" Value="#22d3ee"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
 
-            <TextBlock Text="Grid Decoders (0=High, 1=Half, 2=Quarter, 3=Smallest)" Foreground="#94a3b8" Margin="0,0,0,5"/>
-            <Slider Value="{Binding Settings.AvcodecLowres}" Minimum="0" Maximum="3" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,0,0,5"/>
-            <TextBlock Text="{Binding Settings.AvcodecLowres, StringFormat='Value: {0}'}" Foreground="#22d3ee" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+            <!-- PERFORMANCE TAB -->
+            <TabItem Header="Performance">
+                <StackPanel Margin="0,15,0,0">
+                    <TextBlock Text="Network Caching (ms)" Foreground="#94a3b8" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding Settings.NetworkCaching}" Margin="0,0,0,15" Background="#1e293b" Foreground="White" BorderBrush="#334155" Padding="5"/>
 
-            <CheckBox IsChecked="{Binding Settings.DisableAudioInGrid}" Content="Disable Audio in Grid" Foreground="White" Margin="0,0,0,15"/>
-            <CheckBox IsChecked="{Binding Settings.UseHardwareAcceleration}" Content="Hardware Acceleration (DXVA)" Foreground="White" Margin="0,0,0,15"/>
-            
-            <TextBlock Text="Clock Jitter Control" Foreground="#94a3b8" Margin="0,0,0,5"/>
-            <TextBox Text="{Binding Settings.ClockJitter}" Background="#1e293b" Foreground="White" BorderBrush="#334155" Padding="5" Margin="0,0,0,15"/>
+                    <TextBlock Text="Grid Decoders (0=High, 1=Half, 2=Quarter, 3=Smallest)" Foreground="#94a3b8" Margin="0,0,0,5"/>
+                    <Slider Value="{Binding Settings.AvcodecLowres}" Minimum="0" Maximum="3" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,0,0,5"/>
+                    <TextBlock Text="{Binding Settings.AvcodecLowres, StringFormat='Value: {0}'}" Foreground="#22d3ee" HorizontalAlignment="Right" Margin="0,0,0,15"/>
 
-            <CheckBox IsChecked="{Binding Settings.LowMemoryMode}" Content="Low Memory Mode (Aggressive)" Foreground="#f43f5e" FontWeight="Bold" Margin="0,0,0,15"/>
-        </StackPanel>
+                    <CheckBox IsChecked="{Binding Settings.DisableAudioInGrid}" Content="Disable Audio in Grid" Foreground="White" Margin="0,0,0,15"/>
+                    <CheckBox IsChecked="{Binding Settings.UseHardwareAcceleration}" Content="Hardware Acceleration (DXVA)" Foreground="White" Margin="0,0,0,15"/>
+                    
+                    <TextBlock Text="Clock Jitter Control" Foreground="#94a3b8" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding Settings.ClockJitter}" Background="#1e293b" Foreground="White" BorderBrush="#334155" Padding="5" Margin="0,0,0,15"/>
+
+                    <CheckBox IsChecked="{Binding Settings.LowMemoryMode}" Content="Low Memory Mode (Aggressive)" Foreground="#f43f5e" FontWeight="Bold" Margin="0,0,0,15"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- NOTIFICATIONS TAB -->
+            <TabItem Header="Notifications">
+                <StackPanel Margin="0,15,0,0">
+                    <!-- Enable Toggle -->
+                    <CheckBox IsChecked="{Binding Settings.AlertsEnabled}" Content="Enable System Alerts" FontSize="14" FontWeight="Bold" Foreground="#22d3ee" Margin="0,0,0,15"/>
+
+                    <StackPanel IsEnabled="{Binding Settings.AlertsEnabled}">
+                         <!-- Threshold -->
+                        <TextBlock Text="Alert Threshold (Minutes)" Foreground="#94a3b8" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding Settings.AlertThresholdMinutes}" Background="#1e293b" Foreground="White" BorderBrush="#334155" Padding="5" Margin="0,0,0,15"/>
+                        
+                        <!-- Provider -->
+                        <TextBlock Text="Alert Provider" Foreground="#94a3b8" Margin="0,0,0,5"/>
+                        <ComboBox ItemsSource="{Binding Source={StaticResource AlertProviderEnum}}" SelectedItem="{Binding Settings.Provider}" Background="#1e293b" Foreground="White" BorderBrush="#334155" Padding="5" Margin="0,0,0,15"/>
+
+                        <!-- Discord Fields -->
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Settings.Provider}" Value="Discord">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Settings.Provider}" Value="GenericWebhook">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="Webhook URL" Foreground="#94a3b8" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Settings.WebhookUrl}" Background="#1e293b" Foreground="White" BorderBrush="#334155" Padding="5" Margin="0,0,0,15"/>
+                        </StackPanel>
+
+                        <!-- Telegram Fields -->
+                        <StackPanel>
+                             <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Settings.Provider}" Value="Telegram">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="Telegram Bot Token" Foreground="#94a3b8" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Settings.TelegramBotToken}" Background="#1e293b" Foreground="White" BorderBrush="#334155" Padding="5" Margin="0,0,0,15"/>
+                            
+                            <TextBlock Text="Chat ID" Foreground="#94a3b8" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Settings.TelegramChatId}" Background="#1e293b" Foreground="White" BorderBrush="#334155" Padding="5" Margin="0,0,0,15"/>
+                        </StackPanel>
+
+                        <!-- Test Button -->
+                        <Button Content="TEST ALERT" Command="{Binding TestAlertCommand}" Background="#334155" Foreground="White" BorderThickness="0" Padding="10,5" HorizontalAlignment="Left" Margin="0,15,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
 
         <!-- Footer -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">

@@ -53,9 +53,15 @@ namespace MultiRtspViewer.ViewModels
         public SidebarViewModel Sidebar { get; }
         
         public AppSettings Settings => _settings;
+        private readonly LogService _logService;
+        private readonly AlertService _alertService;
 
         public MainViewModel()
         {
+            _logService = new LogService();
+            _alertService = new AlertService(_logService);
+            _logService.Log("Address MultiRtspViewer started");
+
             _settings = AppSettings.Load();
             Sidebar = new SidebarViewModel();
             Sidebar.PropertyChanged += Sidebar_PropertyChanged;
@@ -85,6 +91,9 @@ namespace MultiRtspViewer.ViewModels
                 _libVLC = new LibVLC();
                 
                 Sidebar.LoadClients();
+
+                // 4. Start Monitoring Service
+                _alertService.Initialize(Cameras, _settings);
                 
                 IsLoading = false;
             }
@@ -161,10 +170,12 @@ namespace MultiRtspViewer.ViewModels
                                 if (cam.ConnectionStatus == ConnectionStatus.Error || cam.ConnectionStatus == ConnectionStatus.Offline)
                                 {
                                     ShowNotification($"Camera '{cam.Name}' is offline", NotificationType.Warning);
+                                    _logService.LogWarning($"Camera '{cam.Name}' is offline. Status: {cam.Status}");
                                 }
                                 else if (cam.ConnectionStatus == ConnectionStatus.Connected)
                                 {
                                     ShowNotification($"Camera '{cam.Name}' connected", NotificationType.Success);
+                                    _logService.Log($"Camera '{cam.Name}' connected successfully.");
                                 }
                             }
                         }
@@ -466,6 +477,9 @@ namespace MultiRtspViewer.ViewModels
 
         public void Dispose()
         {
+            _alertService?.Stop();
+            _alertService?.Dispose();
+
             foreach (var cam in Cameras)
             {
                 cam.Dispose();

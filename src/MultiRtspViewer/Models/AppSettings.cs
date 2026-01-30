@@ -40,6 +40,25 @@ namespace MultiRtspViewer.Models
         [ObservableProperty]
         private int lastClientId = 0; // Track which client's layout this is for
 
+        // Notification Settings
+        [ObservableProperty]
+        private bool alertsEnabled = false;
+
+        [ObservableProperty]
+        private int alertThresholdMinutes = 15;
+
+        [ObservableProperty]
+        private AlertProvider provider = AlertProvider.Discord;
+
+        [ObservableProperty]
+        private string webhookUrl = "";
+
+        [ObservableProperty]
+        private string telegramBotToken = "";
+
+        [ObservableProperty]
+        private string telegramChatId = "";
+
         public static AppSettings Load()
         {
             if (File.Exists(SettingsPath))
@@ -63,5 +82,12 @@ namespace MultiRtspViewer.Models
             }
             catch { }
         }
+    }
+
+    public enum AlertProvider
+    {
+        Discord,
+        Telegram,
+        GenericWebhook
     }
 }
