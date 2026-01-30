@@ -12,6 +12,7 @@ namespace MultiRtspViewer.ViewModels
     public partial class CameraViewModel : ObservableObject, IDisposable
     {
         private readonly LibVLC _libVLC;
+        private readonly AppSettings _settings;
         private MediaPlayer _mediaPlayer;
         private CancellationTokenSource? _reconnectCts;
         private bool _isIntentionalStop = false;
@@ -22,10 +23,11 @@ namespace MultiRtspViewer.ViewModels
 
         public MediaPlayer MediaPlayer => _mediaPlayer;
 
-        public CameraViewModel(CameraModel model, LibVLC libVLC)
+        public CameraViewModel(CameraModel model, LibVLC libVLC, AppSettings settings)
         {
             Model = model;
             _libVLC = libVLC;
+            _settings = settings;
             _mediaPlayer = new MediaPlayer(_libVLC);
 
             // Wire up events
@@ -101,6 +103,9 @@ namespace MultiRtspViewer.ViewModels
             _currentBackoffMs = 2000; // Reset backoff
         }
 
+        [ObservableProperty]
+        private bool isFullQuality = false;
+
         [RelayCommand]
         public void Play()
         {
@@ -115,16 +120,33 @@ namespace MultiRtspViewer.ViewModels
             try
             {
                 using var media = new Media(_libVLC, new Uri(Model.RtspUrl));
-                // Low latency options
-                media.AddOption(":network-caching=300");
-                media.AddOption(":clock-jitter=0");
+                
+                // Base speed/latency options
+                media.AddOption($":network-caching={_settings.NetworkCaching}");
+                media.AddOption($":clock-jitter={_settings.ClockJitter}");
                 media.AddOption(":clock-synchro=0");
+                media.AddOption(":no-video-title-show");
+
+                if (_settings.UseHardwareAcceleration)
+                {
+                    media.AddOption(":avcodec-hw=any");
+                }
+
+                if (!IsFullQuality)
+                {
+                    // Optimization for Grid View
+                    media.AddOption($":avcodec-lowres={_settings.AvcodecLowres}");
+                    if (_settings.DisableAudioInGrid)
+                    {
+                        media.AddOption(":no-audio");
+                    }
+                }
                 
                 _mediaPlayer.Play(media);
             }
             catch (Exception)
             {
-                Model.Status = "Invalid URL";
+                UpdateStatus("Invalid URL");
                 HandleDisconnection("Bad URL");
             }
         }

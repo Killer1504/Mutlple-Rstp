@@ -11,8 +11,15 @@ namespace MultiRtspViewer.ViewModels
 {
     public partial class MainViewModel : ObservableObject, IDisposable
     {
-        private readonly LibVLC _libVLC;
+        private LibVLC? _libVLC;
         private readonly CameraService _cameraService;
+        private readonly AppSettings _settings;
+
+        [ObservableProperty]
+        private bool isLoading = true;
+
+        [ObservableProperty]
+        private string loadingStatus = "Initializing System...";
 
         [ObservableProperty]
         private ObservableCollection<CameraViewModel> cameras = new();
@@ -41,17 +48,60 @@ namespace MultiRtspViewer.ViewModels
 
         public MainViewModel()
         {
+            _settings = AppSettings.Load();
             Sidebar = new SidebarViewModel();
             Sidebar.PropertyChanged += Sidebar_PropertyChanged;
 
             _cameraService = new CameraService();
-            
-            // Enable hardware decoding
-            _libVLC = new LibVLC("--avcodec-hw=d3d11va", "--network-caching=300");
+        }
 
-            if (Sidebar.SelectedClient != null)
+        public async Task InitializeAsync()
+        {
+            try
             {
-                LoadCameras(autoPlay: false); // Defer play until Window Loaded
+                await Task.Run(() => 
+                {
+                    // 1. LibVLC Core
+                    LoadingStatus = "SYST: LOADING NATIVE CORE...";
+                    Core.Initialize();
+                    
+                    // 2. DB Migration
+                    LoadingStatus = "SYST: OPTIMIZING DATABASE...";
+                    var configService = new ConfigService();
+                    var migrationService = new Services.Database.DatabaseMigrationService(configService);
+                    migrationService.Initialize();
+                });
+
+                // 3. UI Resources
+                LoadingStatus = "SYST: MOUNTING CLIENT PROFILES...";
+                _libVLC = new LibVLC();
+                
+                Sidebar.LoadClients();
+                
+                IsLoading = false;
+            }
+            catch (Exception ex)
+            {
+                LoadingStatus = $"FATAL: {ex.Message}";
+                System.Windows.MessageBox.Show($"System failure during startup: {ex.Message}", "Critical Error");
+            }
+        }
+
+        [RelayCommand]
+        public void OpenSettings()
+        {
+            var vm = new SettingsViewModel(_settings);
+            var dialog = new Views.SettingsDialog(vm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                // Restart all grid cameras with new settings?
+                // For now, prompt or just let new loads take effect
+                System.Windows.MessageBox.Show("Settings saved. Some changes may require restarting the stream or app.", "Settings Saved");
+                LoadCameras(autoPlay: true);
             }
         }
 
@@ -88,8 +138,11 @@ namespace MultiRtspViewer.ViewModels
                     Status = "Offline"
                 };
 
-                var cameraVm = new CameraViewModel(model, _libVLC);
-                Cameras.Add(cameraVm);
+                if (_libVLC != null)
+                {
+                    var cameraVm = new CameraViewModel(model, _libVLC, _settings);
+                    Cameras.Add(cameraVm);
+                }
             }
             
             // Only play if requested (runtime switch), otherwise wait for Window_Loaded
@@ -171,6 +224,18 @@ namespace MultiRtspViewer.ViewModels
         }
 
 
+
+        [RelayCommand]
+        public void OpenSpotlight(CameraViewModel camera)
+        {
+            if (camera == null || _libVLC == null) return;
+
+            var dialog = new Views.SpotlightDialog(camera, _libVLC, _settings)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            dialog.Show();
+        }
 
         [RelayCommand]
         public void SetLayout(string layoutType)

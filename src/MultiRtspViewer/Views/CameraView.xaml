@@ -7,6 +7,7 @@
              xmlns:local="clr-namespace:MultiRtspViewer.Views"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="400">
+
     <UserControl.Resources>
         <!-- CRT Scanline Effect (Simulated with Gradient) -->
         <DrawingBrush x:Key="ScanlineBrush" TileMode="Tile" Viewport="0,0,1,4" ViewportUnits="Absolute">
@@ -28,20 +29,26 @@
 
     <Grid Background="#0f172a"> <!-- Slate-900 -->
         <Border BorderBrush="#22d3ee" BorderThickness="1" CornerRadius="4">
+            <Border.InputBindings>
+                        <MouseBinding MouseAction="LeftDoubleClick" 
+                                      Command="{Binding DataContext.OpenSpotlightCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                      CommandParameter="{Binding}"/>
+                    </Border.InputBindings>
             <Grid>
-                <!-- VLC Video View -->
+                <!-- 1. VLC Video View (Base Layer) -->
                 <vlc:VideoView MediaPlayer="{Binding MediaPlayer}" />
 
-                <!-- No Signal Placeholder -->
-                <Grid Visibility="{Binding Model.Status, Converter={StaticResource StatusToVisibilityConverter}}" Background="#0f172a" Panel.ZIndex="1">
+                <!-- 2. No Signal Placeholder (Visual Only) -->
+                <Grid Visibility="{Binding Model.Status, Converter={StaticResource StatusToVisibilityConverter}}" 
+                      Background="#0f172a" Panel.ZIndex="10" IsHitTestVisible="False">
                      <TextBlock Text="NO SIGNAL" Foreground="#22d3ee" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Consolas" FontSize="20" FontWeight="Bold"/>
                 </Grid>
 
-                <!-- CRT Overlay -->
-                <Rectangle Fill="{StaticResource ScanlineBrush}" IsHitTestVisible="False" Opacity="0.3"/>
+                <!-- 3. CRT Overlay (Visual Only) -->
+                <Rectangle Fill="{StaticResource ScanlineBrush}" IsHitTestVisible="False" Opacity="0.3" Panel.ZIndex="15"/>
 
-                <!-- Info Overlay Bar -->
-                <Border VerticalAlignment="Bottom" Background="#CC0f172a" Height="30" Padding="10,0">
+                <!-- 4. Info Overlay Bar (Visual Only) -->
+                <Border VerticalAlignment="Bottom" Background="#CC0f172a" Height="30" Padding="10,0" Panel.ZIndex="20" IsHitTestVisible="False">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -54,6 +61,8 @@
                         </StackPanel>
                     </Grid>
                 </Border>
+
+                <!-- 5. Hit Test Overlay (Top Layer - Captures Double Click) -->
             </Grid>
         </Border>
     </Grid>

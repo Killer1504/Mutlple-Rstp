@@ -16,10 +16,12 @@ namespace MultiRtspViewer
             Loaded += MainWindow_Loaded;
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             if (DataContext is MainViewModel viewModel)
             {
+                await viewModel.InitializeAsync();
+                
                 // Delay slightly to ensure VideoView controls are ready
                 Dispatcher.InvokeAsync(() =>
                 {

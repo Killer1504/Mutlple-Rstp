@@ -1,0 +1,44 @@
+<Window x:Class="MultiRtspViewer.Views.SpotlightDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+        Title="Spotlight View" 
+        Height="720" Width="1280"
+        WindowStartupLocation="CenterScreen"
+        Background="Black"
+        BorderBrush="#22d3ee"
+        BorderThickness="1"
+        WindowStyle="None"
+        AllowsTransparency="True">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Headerbar -->
+            <RowDefinition Height="*"/>    <!-- Video -->
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#1e293b" Padding="15" BorderBrush="#334155" BorderThickness="0,0,0,1">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="SPOTLIGHT:" FontWeight="Bold" Foreground="#22d3ee" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="CameraNameText" Foreground="White" FontSize="16"/>
+                </StackPanel>
+                
+                <Button HorizontalAlignment="Right" Content="✕ CLOSE" Click="CloseButton_Click" 
+                        Background="#ef4444" Foreground="White" Padding="15,5" BorderThickness="0">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                             <Setter Property="CornerRadius" Value="4"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Video Player -->
+        <Border Grid.Row="1" Background="Black">
+            <vlc:VideoView x:Name="VideoPlayer"/>
+        </Border>
+    </Grid>
+</Window>

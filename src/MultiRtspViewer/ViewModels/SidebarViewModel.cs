@@ -21,7 +21,7 @@ namespace MultiRtspViewer.ViewModels
         public SidebarViewModel()
         {
             _clientService = new ClientService();
-            LoadClients();
+            // LoadClients called from MainViewModel.InitializeAsync
         }
 
         public void LoadClients(int? selectId = null)
