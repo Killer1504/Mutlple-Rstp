@@ -3,6 +3,15 @@ using System;
 
 namespace MultiRtspViewer.Models
 {
+    public enum ConnectionStatus
+    {
+        Offline,
+        Connecting,
+        Connected,
+        Reconnecting,
+        Error
+    }
+
     public partial class CameraModel : ObservableObject
     {
         [ObservableProperty]
@@ -14,9 +23,20 @@ namespace MultiRtspViewer.Models
         [ObservableProperty]
         private string rtspUrl = "";
 
-        // Status: "Connecting", "Online", "Offline", "Error"
+        // Legacy string status for backward compatibility
         [ObservableProperty]
         private string status = "Offline";
+
+        // New enum-based connection status
+        [ObservableProperty]
+        private ConnectionStatus connectionStatus = ConnectionStatus.Offline;
+
+        // Health monitoring
+        [ObservableProperty]
+        private DateTime? lastHeartbeat;
+
+        [ObservableProperty]
+        private int reconnectAttempts = 0;
 
         public CameraModel() { }
     }

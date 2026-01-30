@@ -36,6 +36,12 @@ namespace MultiRtspViewer.ViewModels
         [ObservableProperty]
         private bool isSidebarVisible = true;
 
+        [ObservableProperty]
+        private ObservableCollection<NotificationMessage> notifications = new();
+
+        [ObservableProperty]
+        private NotificationMessage? currentNotification;
+
         [RelayCommand]
         public void ToggleSidebar()
         {
@@ -45,6 +51,8 @@ namespace MultiRtspViewer.ViewModels
         public bool HasNoCameras => Cameras.Count == 0;
 
         public SidebarViewModel Sidebar { get; }
+        
+        public AppSettings Settings => _settings;
 
         public MainViewModel()
         {
@@ -141,6 +149,27 @@ namespace MultiRtspViewer.ViewModels
                 if (_libVLC != null)
                 {
                     var cameraVm = new CameraViewModel(model, _libVLC, _settings);
+                    
+                    // Subscribe to connection status changes for notifications
+                    cameraVm.Model.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(CameraModel.ConnectionStatus))
+                        {
+                            var cam = s as CameraModel;
+                            if (cam != null)
+                            {
+                                if (cam.ConnectionStatus == ConnectionStatus.Error || cam.ConnectionStatus == ConnectionStatus.Offline)
+                                {
+                                    ShowNotification($"Camera '{cam.Name}' is offline", NotificationType.Warning);
+                                }
+                                else if (cam.ConnectionStatus == ConnectionStatus.Connected)
+                                {
+                                    ShowNotification($"Camera '{cam.Name}' connected", NotificationType.Success);
+                                }
+                            }
+                        }
+                    };
+                    
                     Cameras.Add(cameraVm);
                 }
             }
@@ -151,7 +180,17 @@ namespace MultiRtspViewer.ViewModels
                 foreach(var cam in Cameras) { cam.Play(); }
             }
 
-            UpdateLayout();
+            // Restore saved grid layout for this client
+            if (_settings.LastClientId == Sidebar.SelectedClient.Id)
+            {
+                Rows = _settings.LastGridRows;
+                Columns = _settings.LastGridColumns;
+            }
+            else
+            {
+                UpdateLayout(); // Auto-calculate for new client
+            }
+            
             OnPropertyChanged(nameof(HasNoCameras));
         }
 
@@ -161,6 +200,24 @@ namespace MultiRtspViewer.ViewModels
             foreach (var camera in Cameras)
             {
                 camera.Play();
+            }
+        }
+
+        // Eco Mode: Pause all streams
+        public void PauseAllCameras()
+        {
+            foreach (var camera in Cameras)
+            {
+                camera.Pause();
+            }
+        }
+
+        // Eco Mode: Resume all streams
+        public void ResumeAllCameras()
+        {
+            foreach (var camera in Cameras)
+            {
+                camera.Resume();
             }
         }
 
@@ -248,6 +305,9 @@ namespace MultiRtspViewer.ViewModels
                 case "4x4": Rows = 4; Columns = 4; break;
                 case "Auto": UpdateLayout(); break;
             }
+            
+            // Save the layout preference
+            SaveGridLayout();
         }
 
         private void UpdateLayout()
@@ -361,6 +421,46 @@ namespace MultiRtspViewer.ViewModels
                 }
             }
             _cameraService.UpdateCameraPositions(dbCameras);
+        }
+
+        private async void ShowNotification(string message, NotificationType type = NotificationType.Info)
+        {
+            var notification = new NotificationMessage(message, type);
+            
+            await System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
+            {
+                Notifications.Add(notification);
+                CurrentNotification = notification;
+            });
+
+            // Auto-dismiss after 3 seconds
+            await System.Threading.Tasks.Task.Delay(3000);
+            
+            await System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
+            {
+                notification.IsVisible = false;
+                if (CurrentNotification == notification)
+                {
+                    CurrentNotification = null;
+                }
+                
+                // Remove old notifications (keep last 5)
+                while (Notifications.Count > 5)
+                {
+                    Notifications.RemoveAt(0);
+                }
+            });
+        }
+
+        private void SaveGridLayout()
+        {
+            if (Sidebar.SelectedClient != null)
+            {
+                _settings.LastClientId = Sidebar.SelectedClient.Id;
+                _settings.LastGridRows = Rows;
+                _settings.LastGridColumns = Columns;
+                _settings.Save();
+            }
         }
 
 

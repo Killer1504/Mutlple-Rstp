@@ -27,6 +27,19 @@ namespace MultiRtspViewer.Models
         [ObservableProperty]
         private bool lowMemoryMode = false;
 
+        [ObservableProperty]
+        private bool ecoMode = true; // Pause streams when minimized
+
+        // Grid Layout Persistence
+        [ObservableProperty]
+        private int lastGridRows = 2;
+
+        [ObservableProperty]
+        private int lastGridColumns = 2;
+
+        [ObservableProperty]
+        private int lastClientId = 0; // Track which client's layout this is for
+
         public static AppSettings Load()
         {
             if (File.Exists(SettingsPath))
