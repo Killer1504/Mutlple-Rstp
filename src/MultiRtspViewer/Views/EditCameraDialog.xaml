@@ -176,6 +176,25 @@
                           FontSize="12"
                           Margin="0,0,0,15"/>
 
+                <!-- AI Toggle -->
+                <Border Background="#1e293b" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,15">
+                     <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="ENABLE AI DETECTION" Foreground="#22d3ee" FontSize="11" FontWeight="Bold"/>
+                            <TextBlock Text="Detect people &amp; vehicles" Foreground="#64748b" FontSize="10"/>
+                        </StackPanel>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding IsAiEnabled}" VerticalAlignment="Center" Margin="10,0,0,0">
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="1.2" ScaleY="1.2"/>
+                            </CheckBox.LayoutTransform>
+                        </CheckBox>
+                    </Grid>
+                </Border>
+
                 <!-- Examples -->
                 <Border Background="#1e293b" 
                        BorderBrush="#334155" 

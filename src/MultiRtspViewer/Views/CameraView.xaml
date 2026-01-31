@@ -62,6 +62,34 @@
                     </Grid>
                 </Border>
 
+                <!-- 6. AI Bounding Box Overlay -->
+                <!-- Use Viewbox to scale the 640x640 YOLO coordinates to the actual video size -->
+                <Viewbox Stretch="Fill" IsHitTestVisible="False" Panel.ZIndex="18">
+                    <ItemsControl ItemsSource="{Binding Detections}" Width="640" Height="640">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas Background="Transparent"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Width="{Binding Width}" Height="{Binding Height}">
+                                    <Border BorderBrush="Red" BorderThickness="2" CornerRadius="2"/>
+                                    <Border Background="Red" VerticalAlignment="Top" HorizontalAlignment="Left" Padding="2,0" Margin="0,-16,0,0">
+                                        <TextBlock Text="{Binding Label}" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Viewbox>
+
                 <!-- 5. Hit Test Overlay (Top Layer - Captures Double Click) -->
             </Grid>
         </Border>

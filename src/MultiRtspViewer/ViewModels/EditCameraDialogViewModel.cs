@@ -20,12 +20,16 @@ namespace MultiRtspViewer.ViewModels
         [ObservableProperty]
         private bool isValid = false;
 
+        [ObservableProperty]
+        private bool isAiEnabled;
+
         public bool DialogResult { get; private set; }
 
         public EditCameraDialogViewModel(CameraModel camera)
         {
             CameraName = camera.Name;
             RtspUrl = camera.RtspUrl;
+            IsAiEnabled = camera.IsAiEnabled;
             ValidateUrl();
         }
 

@@ -55,6 +55,8 @@ namespace MultiRtspViewer.ViewModels
         public AppSettings Settings => _settings;
         private readonly LogService _logService;
         private readonly AlertService _alertService;
+        private readonly Services.AI.IAIProvider _aiProvider;
+        private readonly Services.AI.ModelManager _modelManager;
 
         public MainViewModel()
         {
@@ -67,6 +69,8 @@ namespace MultiRtspViewer.ViewModels
             Sidebar.PropertyChanged += Sidebar_PropertyChanged;
 
             _cameraService = new CameraService();
+            _modelManager = new Services.AI.ModelManager();
+            _aiProvider = new Services.AI.YoloV8Service();
         }
 
         public async Task InitializeAsync()
@@ -90,6 +94,24 @@ namespace MultiRtspViewer.ViewModels
                 LoadingStatus = "SYST: MOUNTING CLIENT PROFILES...";
                 _libVLC = new LibVLC();
                 
+                // 3.1 Initialize AI (Download model if missing)
+                LoadingStatus = "SYST: INITIALIZING AI CORE...";
+                try 
+                {
+                    string modelName = "yolov8n.onnx";
+                    // Official Ultralytics Release
+                    string modelUrl = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.onnx";
+                    
+                    await _modelManager.EnsureModelExistsAsync(modelName, modelUrl);
+                    await _aiProvider.InitializeAsync(_modelManager.GetModelPath(modelName));
+                    _logService.Log($"AI Engine Initialized: {_aiProvider.Name} (GPU: {_aiProvider.IsGpuEnabled})");
+                }
+                catch (Exception ex)
+                {
+                    _logService.LogError($"AI Init Failed: {ex.Message}");
+                    // Non-fatal, app continues without AI
+                }
+
                 Sidebar.LoadClients();
 
                 // 4. Start Monitoring Service
@@ -157,7 +179,7 @@ namespace MultiRtspViewer.ViewModels
 
                 if (_libVLC != null)
                 {
-                    var cameraVm = new CameraViewModel(model, _libVLC, _settings);
+                    var cameraVm = new CameraViewModel(model, _libVLC, _settings, _aiProvider);
                     
                     // Subscribe to connection status changes for notifications
                     cameraVm.Model.PropertyChanged += (s, e) =>
@@ -350,6 +372,7 @@ namespace MultiRtspViewer.ViewModels
                 var vm = dialog.ViewModel;
                 cameraVm.Model.Name = vm.CameraName.Trim();
                 cameraVm.Model.RtspUrl = vm.RtspUrl.Trim();
+                cameraVm.Model.IsAiEnabled = vm.IsAiEnabled;
                 
                 // DB Update
                 if (int.TryParse(cameraVm.Model.Id, out int camId))

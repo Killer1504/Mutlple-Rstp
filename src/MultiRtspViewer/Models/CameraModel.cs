@@ -38,6 +38,16 @@ namespace MultiRtspViewer.Models
         [ObservableProperty]
         private int reconnectAttempts = 0;
 
+        // AI Features
+        [ObservableProperty]
+        private bool isAiEnabled = false;
+
+        [ObservableProperty]
+        private bool detectPerson = true;
+
+        [ObservableProperty]
+        private bool detectVehicle = false;
+
         public CameraModel() { }
     }
 }

@@ -26,12 +26,33 @@ namespace MultiRtspViewer.ViewModels
 
         public MediaPlayer MediaPlayer => _mediaPlayer;
 
-        public CameraViewModel(CameraModel model, LibVLC libVLC, AppSettings settings)
+        public void Dispose()
+        {
+            _reconnectCts?.Cancel();
+            _aiCts?.Cancel();
+            _mediaPlayer?.Dispose();
+        }
+
+        // ========================================================================================================
+        // AI INTEGRATION
+        // ========================================================================================================
+        private readonly Services.AI.IAIProvider? _aiProvider;
+        private CancellationTokenSource? _aiCts;
+        private bool _isAiLoopRunning = false;
+        private readonly string _snapshotPath;
+
+        [ObservableProperty]
+        private System.Collections.ObjectModel.ObservableCollection<Models.AI.DetectionResult> detections = new();
+
+        // Modified Constructor to accept AI Provider
+        public CameraViewModel(CameraModel model, LibVLC libVLC, AppSettings settings, Services.AI.IAIProvider? aiProvider = null)
         {
             Model = model;
             _libVLC = libVLC;
             _settings = settings;
+            _aiProvider = aiProvider;
             _mediaPlayer = new MediaPlayer(_libVLC);
+            _snapshotPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"snap_{Guid.NewGuid()}.jpg");
 
             // Wire up events
             _mediaPlayer.EncounteredError += (s, e) => HandleDisconnection("Error", ConnectionStatus.Error);
@@ -43,15 +64,111 @@ namespace MultiRtspViewer.ViewModels
                 UpdateStatus("Online", ConnectionStatus.Connected);
                 UpdateHeartbeat();
                 ResetReconnect();
+                
+                // Start AI if enabled
+                CheckInfoAiLoop();
             };
             
             _mediaPlayer.Stopped += (s, e) => 
             {
+                StopAiLoop(); // Stop AI when video stops
+
                 if (_isIntentionalStop) 
                     UpdateStatus("Offline", ConnectionStatus.Offline);
                 else 
                     HandleDisconnection("Stopped", ConnectionStatus.Offline);
             };
+            
+            // Watch for property changes to toggle AI
+            Model.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(CameraModel.IsAiEnabled))
+                {
+                    CheckInfoAiLoop();
+                }
+            };
+        }
+
+        private void CheckInfoAiLoop()
+        {
+            if (Model.IsAiEnabled && _mediaPlayer.IsPlaying && !_isAiLoopRunning)
+            {
+                StartAiLoop();
+            }
+            else if (!Model.IsAiEnabled && _isAiLoopRunning)
+            {
+                StopAiLoop();
+            }
+        }
+
+        private void StartAiLoop()
+        {
+            if (_aiProvider == null || _isAiLoopRunning) return;
+
+            _aiCts = new CancellationTokenSource();
+            _isAiLoopRunning = true;
+            _ = AiLoopAsync(_aiCts.Token);
+        }
+
+        private void StopAiLoop()
+        {
+            _aiCts?.Cancel();
+            _isAiLoopRunning = false;
+            // Clear detections when disabled
+            Application.Current?.Dispatcher.InvokeAsync(() => Detections.Clear());
+        }
+
+        private async Task AiLoopAsync(CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    if (!_mediaPlayer.IsPlaying) 
+                    {
+                        await Task.Delay(1000, token);
+                        continue;
+                    }
+
+                    // 1. Take Snapshot to Temp File (Fastest robust method without hooking callbacks)
+                    // 0,0 = original size. We want it smaller for speed? No, YOLO handles resize.
+                    bool success = _mediaPlayer.TakeSnapshot(0, _snapshotPath, 0, 0);
+
+                    if (success && System.IO.File.Exists(_snapshotPath))
+                    {
+                        using (var bitmap = new System.Drawing.Bitmap(_snapshotPath))
+                        {
+                            // 2. Run Inference
+                            var results = await _aiProvider.DetectAsync(bitmap);
+
+                            // 3. Update UI
+                            // Filter by what user wants (Person/Vehicle)
+                            var filtered = results.Where(r => 
+                                (Model.DetectPerson && r.Label == "person") ||
+                                (Model.DetectVehicle && (r.Label == "car" || r.Label == "truck" || r.Label == "bus"))
+                            ).ToList();
+
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                Detections.Clear();
+                                foreach(var d in filtered) Detections.Add(d);
+                            });
+                        }
+
+                        // Cleanup
+                        try { System.IO.File.Delete(_snapshotPath); } catch { }
+                    }
+
+                    // Throttle (5 FPS max)
+                    await Task.Delay(200, token);
+                }
+                catch (TaskCanceledException) { break; }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"AI Error: {ex.Message}");
+                    await Task.Delay(1000, token); // Backoff on error
+                }
+            }
         }
 
         private void UpdateStatus(string status, ConnectionStatus connectionStatus)
@@ -249,10 +366,7 @@ namespace MultiRtspViewer.ViewModels
             }
         }
 
-        public void Dispose()
-        {
-            _reconnectCts?.Cancel();
-            _mediaPlayer?.Dispose();
-        }
+
+
     }
 }
