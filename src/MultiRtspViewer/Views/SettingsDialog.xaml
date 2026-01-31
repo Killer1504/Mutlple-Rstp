@@ -112,6 +112,41 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Test Button Style -->
+        <Style x:Key="TestButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="#22d3ee"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#22d3ee"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="30,15"/>
+            <Setter Property="MinWidth" Value="150"/>
+            <Setter Property="MinHeight" Value="50"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#22d3ee"/>
+                                <Setter Property="Foreground" Value="#0f172a"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#0891b2"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="25">
@@ -225,7 +260,7 @@
                         </StackPanel>
 
                         <!-- Test Button -->
-                        <Button Content="TEST ALERT" Command="{Binding TestAlertCommand}" Background="#334155" Foreground="White" BorderThickness="0" Padding="10,5" HorizontalAlignment="Left" Margin="0,15,0,0"/>
+                        <Button Content="TEST ALERT" Command="{Binding TestAlertCommand}" Style="{StaticResource TestButtonStyle}" HorizontalAlignment="Left" Margin="0,15,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </TabItem>
