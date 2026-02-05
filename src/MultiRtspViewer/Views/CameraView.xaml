@@ -64,35 +64,42 @@
 
                 <!-- 6. AI Bounding Box Overlay -->
                 <!-- Use Viewbox to scale the 640x640 YOLO coordinates to the actual video size -->
-                <Viewbox Stretch="Fill" IsHitTestVisible="False" Panel.ZIndex="18">
-                    <ItemsControl ItemsSource="{Binding Detections}" Width="640" Height="640">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas Background="Transparent"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemContainerStyle>
-                            <Style TargetType="ContentPresenter">
-                                <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                            </Style>
-                        </ItemsControl.ItemContainerStyle>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Width="{Binding Width}" Height="{Binding Height}">
-                                    <Border BorderBrush="#ff0000" BorderThickness="3" CornerRadius="2">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.5"/>
-                                        </Border.Effect>
-                                    </Border>
-                                    <Border Background="#ff0000" VerticalAlignment="Top" HorizontalAlignment="Left" Padding="4,2" Margin="0,-20,0,0" CornerRadius="2">
-                                        <TextBlock Text="{Binding Label}" Foreground="White" FontSize="11" FontWeight="Bold"/>
-                                    </Border>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Viewbox>
+                <!-- 6. AI Bounding Box Overlay (Wrapped in Popup to fix Airspace/Z-Order issue over HWND VideoView) -->
+                <!-- Note: Popups are separate top-level windows, so they can render over native controls -->
+                <Popup IsOpen="True" Placement="Center" AllowsTransparency="True" IsHitTestVisible="False">
+                    <Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=local:CameraView}}" 
+                          Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=local:CameraView}}">
+                        <Viewbox Stretch="Fill">
+                            <ItemsControl ItemsSource="{Binding Detections}" Width="640" Height="640">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas Background="Transparent"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Width="{Binding Width}" Height="{Binding Height}">
+                                            <Border BorderBrush="#ff0000" BorderThickness="3" CornerRadius="2">
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.5"/>
+                                                </Border.Effect>
+                                            </Border>
+                                            <Border Background="#ff0000" VerticalAlignment="Top" HorizontalAlignment="Left" Padding="4,2" Margin="0,-20,0,0" CornerRadius="2">
+                                                <TextBlock Text="{Binding Label}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Viewbox>
+                    </Grid>
+                </Popup>
 
                 <!-- 5. Hit Test Overlay (Top Layer - Captures Double Click) -->
             </Grid>
