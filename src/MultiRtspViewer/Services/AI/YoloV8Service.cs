@@ -16,7 +16,7 @@ namespace MultiRtspViewer.Services.AI
         private readonly YoloParser _parser = new YoloParser();
         private const int ModelSize = 640;
 
-        public string Name => "YOLOv8 Nano (Standard)";
+        public string Name => "YOLO11 Nano (Compatible)";
         public bool IsGpuEnabled { get; private set; } = false;
 
         public async Task InitializeAsync(string modelPath)

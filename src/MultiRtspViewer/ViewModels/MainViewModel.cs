@@ -53,6 +53,7 @@ namespace MultiRtspViewer.ViewModels
         public SidebarViewModel Sidebar { get; }
         
         public AppSettings Settings => _settings;
+        public LogService Logs => _logService;
         private readonly LogService _logService;
         private readonly AlertService _alertService;
         private readonly Services.AI.IAIProvider _aiProvider;
@@ -92,15 +93,15 @@ namespace MultiRtspViewer.ViewModels
 
                 // 3. UI Resources
                 LoadingStatus = "SYST: MOUNTING CLIENT PROFILES...";
-                _libVLC = new LibVLC();
+                _libVLC = new LibVLC("--no-osd", "--no-snapshot-preview");  // Disable OSD and snapshot thumbnails
                 
                 // 3.1 Initialize AI (Download model if missing)
                 LoadingStatus = "SYST: INITIALIZING AI CORE...";
                 try 
                 {
-                    string modelName = "yolov8n.onnx";
-                    // Official Ultralytics Release
-                    string modelUrl = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.onnx";
+                    string modelName = "yolo11n.onnx";
+                    // Verified YOLO11 Release (v8.3.0 Assets)
+                    string modelUrl = "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.onnx";
                     
                     await _modelManager.EnsureModelExistsAsync(modelName, modelUrl);
                     await _aiProvider.InitializeAsync(_modelManager.GetModelPath(modelName));
@@ -174,12 +175,16 @@ namespace MultiRtspViewer.ViewModels
                     Id = dbCam.Id.ToString(), // Map DB ID to Model ID
                     Name = dbCam.Name,
                     RtspUrl = dbCam.RtspUrl,
-                    Status = "Offline"
+                    Status = "Offline",
+                    // AI Configuration
+                    IsAiEnabled = dbCam.IsAiEnabled,
+                    DetectPerson = dbCam.DetectPerson,
+                    DetectVehicle = dbCam.DetectVehicle
                 };
 
                 if (_libVLC != null)
                 {
-                    var cameraVm = new CameraViewModel(model, _libVLC, _settings, _aiProvider);
+                    var cameraVm = new CameraViewModel(model, _libVLC, _settings, _aiProvider, _logService);
                     
                     // Subscribe to connection status changes for notifications
                     cameraVm.Model.PropertyChanged += (s, e) =>
@@ -373,19 +378,34 @@ namespace MultiRtspViewer.ViewModels
                 cameraVm.Model.Name = vm.CameraName.Trim();
                 cameraVm.Model.RtspUrl = vm.RtspUrl.Trim();
                 cameraVm.Model.IsAiEnabled = vm.IsAiEnabled;
+                cameraVm.Model.DetectPerson = vm.DetectPerson;
+                cameraVm.Model.DetectVehicle = vm.DetectVehicle;
                 
                 // DB Update
                 if (int.TryParse(cameraVm.Model.Id, out int camId))
                 {
-                    var dbCam = new Models.Database.Camera 
+                    try 
                     {
-                        Id = camId,
-                        ClientId = Sidebar.SelectedClient?.Id ?? 0,
-                        Name = cameraVm.Model.Name,
-                        RtspUrl = cameraVm.Model.RtspUrl,
-                        Position = 0 // Should preserve existing position properly but simplifying for now
-                    };
-                    _cameraService.UpdateCamera(dbCam);
+                        using (var db = new Services.Database.AppDbContext())
+                        {
+                            var existing = db.Cameras.Find(camId);
+                            if (existing != null)
+                            {
+                                existing.Name = cameraVm.Model.Name;
+                                existing.RtspUrl = cameraVm.Model.RtspUrl;
+                                existing.IsAiEnabled = cameraVm.Model.IsAiEnabled;
+                                existing.DetectPerson = cameraVm.Model.DetectPerson;
+                                existing.DetectVehicle = cameraVm.Model.DetectVehicle;
+                                
+                                db.SaveChanges();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowNotification("Failed to save camera settings", NotificationType.Error);
+                        _logService.LogError($"Camera Save Failed: {ex.Message}");
+                    }
                 }
 
                 // Restart stream with new URL

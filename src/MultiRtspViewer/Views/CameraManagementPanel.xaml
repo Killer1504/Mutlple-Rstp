@@ -77,151 +77,197 @@
             </Grid>
         </Border>
 
-        <!-- Camera List -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="15">
-            <ItemsControl ItemsSource="{Binding Cameras}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Style="{StaticResource CameraCard}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*"/> <!-- Camera List -->
+                <RowDefinition Height="Auto"/> <!-- Splitter -->
+                <RowDefinition Height="*"/> <!-- System Logs -->
+            </Grid.RowDefinitions>
 
-                                <!-- Camera Name & Status -->
-                                <Grid Grid.Row="0" Margin="0,0,0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
+            <!-- 1. Camera List -->
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="15">
+                <ItemsControl ItemsSource="{Binding Cameras}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource CameraCard}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Model.Name}" 
-                                                  FontSize="16" 
-                                                  FontWeight="Bold" 
-                                                  Foreground="White"
-                                                  Margin="0,0,0,5"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Ellipse Width="8" Height="8" 
-                                                    Fill="{Binding Model.Status, Converter={StaticResource StatusToColorConverter}}"
-                                                    Margin="0,0,6,0"/>
-                                            <TextBlock Text="{Binding Model.Status}" 
-                                                      FontSize="11" 
-                                                      Foreground="#94a3b8"/>
+                                    <!-- Camera Name & Status -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Model.Name}" 
+                                                      FontSize="16" 
+                                                      FontWeight="Bold" 
+                                                      Foreground="White"
+                                                      Margin="0,0,0,5"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse Width="8" Height="8" 
+                                                        Fill="{Binding Model.Status, Converter={StaticResource StatusToColorConverter}}"
+                                                        Margin="0,0,6,0"/>
+                                                <TextBlock Text="{Binding Model.Status}" 
+                                                          FontSize="11" 
+                                                          Foreground="#94a3b8"/>
+                                            </StackPanel>
                                         </StackPanel>
-                                    </StackPanel>
 
-                                    <!-- Move Buttons -->
-                                    <StackPanel Grid.Column="1" Orientation="Vertical">
-                                        <Button Content="▲" 
+                                        <!-- Move Buttons -->
+                                        <StackPanel Grid.Column="1" Orientation="Vertical">
+                                            <Button Content="▲" 
+                                                   Style="{StaticResource IconButton}"
+                                                   Command="{Binding DataContext.MoveCameraUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                   CommandParameter="{Binding}"
+                                                   FontSize="10"
+                                                   Padding="6,2"
+                                                   Margin="0,0,0,2"/>
+                                            <Button Content="▼" 
+                                                   Style="{StaticResource IconButton}"
+                                                   Command="{Binding DataContext.MoveCameraDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                   CommandParameter="{Binding}"
+                                                   FontSize="10"
+                                                   Padding="6,2"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- RTSP URL -->
+                                    <Border Grid.Row="1" 
+                                           Background="#1e293b" 
+                                           CornerRadius="4" 
+                                           Padding="10"
+                                           Margin="0,0,0,10">
+                                        <TextBlock Text="{Binding Model.RtspUrl}" 
+                                                  FontFamily="Consolas"
+                                                  FontSize="11" 
+                                                  Foreground="#64748b"
+                                                  TextTrimming="CharacterEllipsis"
+                                                  ToolTip="{Binding Model.RtspUrl}"/>
+                                    </Border>
+
+                                    <!-- Control Buttons -->
+                                    <Grid Grid.Row="2" Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Column="0" 
+                                               Content="▶ Play" 
+                                               Command="{Binding PlayCommand}"
                                                Style="{StaticResource IconButton}"
-                                               Command="{Binding DataContext.MoveCameraUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                               CommandParameter="{Binding}"
-                                               FontSize="10"
-                                               Padding="6,2"
-                                               Margin="0,0,0,2"/>
-                                        <Button Content="▼" 
+                                               FontSize="11"
+                                               Margin="0,0,5,0"/>
+                                        
+                                        <Button Grid.Column="1" 
+                                               Content="■ Stop" 
+                                               Command="{Binding StopCommand}"
                                                Style="{StaticResource IconButton}"
-                                               Command="{Binding DataContext.MoveCameraDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               FontSize="11"
+                                               Margin="0,0,5,0"/>
+                                        
+                                        <Button Grid.Column="2" 
+                                               Content="↻ Retry" 
+                                               Command="{Binding PlayCommand}"
+                                               Style="{StaticResource IconButton}"
+                                               FontSize="11"/>
+                                    </Grid>
+
+                                    <!-- Action Buttons -->
+                                    <Grid Grid.Row="3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Column="0"
+                                               Content="✎ Edit" 
+                                               Command="{Binding DataContext.EditCameraCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                CommandParameter="{Binding}"
-                                               FontSize="10"
-                                               Padding="6,2"/>
-                                    </StackPanel>
+                                               Style="{StaticResource IconButton}"
+                                               HorizontalAlignment="Left"
+                                               FontSize="12"/>
+
+                                        <Button Grid.Column="1"
+                                               Content="🗑 Delete" 
+                                               Command="{Binding DataContext.DeleteCameraCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding}"
+                                               Style="{StaticResource DeleteButton}"
+                                               FontSize="12"/>
+                                    </Grid>
                                 </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
-                                <!-- RTSP URL -->
-                                <Border Grid.Row="1" 
-                                       Background="#1e293b" 
-                                       CornerRadius="4" 
-                                       Padding="10"
-                                       Margin="0,0,0,10">
-                                    <TextBlock Text="{Binding Model.RtspUrl}" 
-                                              FontFamily="Consolas"
-                                              FontSize="11" 
-                                              Foreground="#64748b"
-                                              TextTrimming="CharacterEllipsis"
-                                              ToolTip="{Binding Model.RtspUrl}"/>
-                                </Border>
+            <!-- 2. Splitter -->
+            <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" Background="#334155" ShowsPreview="True"/>
 
-                                <!-- Control Buttons -->
-                                <Grid Grid.Row="2" Margin="0,0,0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
+            <!-- 3. System Logs -->
+            <Grid Grid.Row="2" Background="#0f172a">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                                    <Button Grid.Column="0" 
-                                           Content="▶ Play" 
-                                           Command="{Binding PlayCommand}"
-                                           Style="{StaticResource IconButton}"
-                                           FontSize="11"
-                                           Margin="0,0,5,0"/>
-                                    
-                                    <Button Grid.Column="1" 
-                                           Content="■ Stop" 
-                                           Command="{Binding StopCommand}"
-                                           Style="{StaticResource IconButton}"
-                                           FontSize="11"
-                                           Margin="0,0,5,0"/>
-                                    
-                                    <Button Grid.Column="2" 
-                                           Content="↻ Retry" 
-                                           Command="{Binding PlayCommand}"
-                                           Style="{StaticResource IconButton}"
-                                           FontSize="11"/>
-                                </Grid>
+                <Border Padding="15,8" Background="#1e293b" BorderBrush="#334155" BorderThickness="0,0,0,1">
+                    <TextBlock Text="SYSTEM LOGS" Foreground="#22d3ee" FontSize="11" FontWeight="Bold" FontFamily="Consolas"/>
+                </Border>
 
-                                <!-- Action Buttons -->
-                                <Grid Grid.Row="3">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
+                <ListBox Grid.Row="1" ItemsSource="{Binding Logs.LogEntries}" Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="5,2">
+                                <TextBlock Text="{Binding FormattedTime}" Foreground="#475569" FontSize="10" Width="55" FontFamily="Consolas"/>
+                                <TextBlock Text="{Binding Message}" Foreground="{Binding Color}" FontSize="10" TextWrapping="Wrap" MaxWidth="260" FontFamily="Consolas"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </Grid>
 
-                                    <Button Grid.Column="0"
-                                           Content="✎ Edit" 
-                                           Command="{Binding DataContext.EditCameraCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                           CommandParameter="{Binding}"
-                                           Style="{StaticResource IconButton}"
-                                           HorizontalAlignment="Left"
-                                           FontSize="12"/>
-
-                                    <Button Grid.Column="1"
-                                           Content="🗑 Delete" 
-                                           Command="{Binding DataContext.DeleteCameraCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                           CommandParameter="{Binding}"
-                                           Style="{StaticResource DeleteButton}"
-                                           FontSize="12"/>
-                                </Grid>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
-
-        <!-- Empty State -->
-        <StackPanel Grid.Row="1" 
-                   VerticalAlignment="Center" 
-                   HorizontalAlignment="Center"
-                   Visibility="{Binding HasNoCameras, Converter={StaticResource BoolToVisibilityConverter}}">
-            <TextBlock Text="📹" 
-                      FontSize="48" 
-                      HorizontalAlignment="Center"
-                      Margin="0,0,0,15"/>
-            <TextBlock Text="No cameras added yet" 
-                      FontSize="16" 
-                      Foreground="#64748b"
-                      HorizontalAlignment="Center"
-                      Margin="0,0,0,5"/>
-            <TextBlock Text="Click '+ ADD CAMERA' to get started" 
-                      FontSize="12" 
-                      Foreground="#475569"
-                      HorizontalAlignment="Center"/>
-        </StackPanel>
+            <!-- Empty State -->
+            <StackPanel Grid.Row="0" 
+                       VerticalAlignment="Center" 
+                       HorizontalAlignment="Center"
+                       Visibility="{Binding HasNoCameras, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="📹" 
+                          FontSize="48" 
+                          HorizontalAlignment="Center"
+                          Margin="0,0,0,15"/>
+                <TextBlock Text="No cameras added yet" 
+                          FontSize="16" 
+                          Foreground="#64748b"
+                          HorizontalAlignment="Center"
+                          Margin="0,0,0,5"/>
+                <TextBlock Text="Click '+ ADD CAMERA' to get started" 
+                          FontSize="12" 
+                          Foreground="#475569"
+                          HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

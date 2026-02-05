@@ -80,9 +80,13 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid Width="{Binding Width}" Height="{Binding Height}">
-                                    <Border BorderBrush="Red" BorderThickness="2" CornerRadius="2"/>
-                                    <Border Background="Red" VerticalAlignment="Top" HorizontalAlignment="Left" Padding="2,0" Margin="0,-16,0,0">
-                                        <TextBlock Text="{Binding Label}" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                    <Border BorderBrush="#ff0000" BorderThickness="3" CornerRadius="2">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.5"/>
+                                        </Border.Effect>
+                                    </Border>
+                                    <Border Background="#ff0000" VerticalAlignment="Top" HorizontalAlignment="Left" Padding="4,2" Margin="0,-20,0,0" CornerRadius="2">
+                                        <TextBlock Text="{Binding Label}" Foreground="White" FontSize="11" FontWeight="Bold"/>
                                     </Border>
                                 </Grid>
                             </DataTemplate>

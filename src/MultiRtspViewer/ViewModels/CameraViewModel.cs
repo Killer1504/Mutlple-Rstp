@@ -28,9 +28,22 @@ namespace MultiRtspViewer.ViewModels
 
         public void Dispose()
         {
+            _isIntentionalStop = true;
             _reconnectCts?.Cancel();
             _aiCts?.Cancel();
-            _mediaPlayer?.Dispose();
+
+            // Stop immediately if playing (avoids hang)
+            if (_mediaPlayer.IsPlaying)
+            {
+                _mediaPlayer.Stop();
+            }
+
+            // Dispose on background thread to prevent UI thread deadlock with LibVLC
+            Task.Run(() => 
+            {
+                try { _mediaPlayer?.Dispose(); } 
+                catch { /* Ignore disposal errors */ }
+            });
         }
 
         // ========================================================================================================
@@ -44,19 +57,29 @@ namespace MultiRtspViewer.ViewModels
         [ObservableProperty]
         private System.Collections.ObjectModel.ObservableCollection<Models.AI.DetectionResult> detections = new();
 
-        // Modified Constructor to accept AI Provider
-        public CameraViewModel(CameraModel model, LibVLC libVLC, AppSettings settings, Services.AI.IAIProvider? aiProvider = null)
+        private readonly Services.ILogService? _logService;
+
+        // Modified Constructor to accept AI Provider and Log Service
+        public CameraViewModel(CameraModel model, LibVLC libVLC, AppSettings settings, Services.AI.IAIProvider? aiProvider = null, Services.ILogService? logService = null)
         {
             Model = model;
             _libVLC = libVLC;
             _settings = settings;
             _aiProvider = aiProvider;
+            _logService = logService;
             _mediaPlayer = new MediaPlayer(_libVLC);
             _snapshotPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"snap_{Guid.NewGuid()}.jpg");
 
+            _logService?.Log($"Camera '{Model.Name}' initialized.");
+
             // Wire up events
-            _mediaPlayer.EncounteredError += (s, e) => HandleDisconnection("Error", ConnectionStatus.Error);
-            _mediaPlayer.EndReached += (s, e) => HandleDisconnection("Ended", ConnectionStatus.Offline);
+            _mediaPlayer.EncounteredError += (s, e) => 
+            {
+                HandleDisconnection("Media Error", ConnectionStatus.Error);
+                _logService?.LogError($"Camera '{Model.Name}' encountered a media error.");
+            };
+
+            _mediaPlayer.EndReached += (s, e) => HandleDisconnection("Stream Ended", ConnectionStatus.Offline);
             
             _mediaPlayer.Opening += (s, e) => UpdateStatus("Connecting...", ConnectionStatus.Connecting);
             _mediaPlayer.Playing += (s, e) => 
@@ -65,6 +88,8 @@ namespace MultiRtspViewer.ViewModels
                 UpdateHeartbeat();
                 ResetReconnect();
                 
+                _logService?.LogSuccess($"Camera '{Model.Name}' is now ONLINE.");
+
                 // Start AI if enabled
                 CheckInfoAiLoop();
             };
@@ -74,9 +99,14 @@ namespace MultiRtspViewer.ViewModels
                 StopAiLoop(); // Stop AI when video stops
 
                 if (_isIntentionalStop) 
+                {
                     UpdateStatus("Offline", ConnectionStatus.Offline);
+                    _logService?.Log($"Camera '{Model.Name}' stopped by user.");
+                }
                 else 
+                {
                     HandleDisconnection("Stopped", ConnectionStatus.Offline);
+                }
             };
             
             // Watch for property changes to toggle AI
@@ -84,6 +114,7 @@ namespace MultiRtspViewer.ViewModels
             {
                 if (e.PropertyName == nameof(CameraModel.IsAiEnabled))
                 {
+                    _logService?.Log($"AI Detection {(Model.IsAiEnabled ? "ENABLED" : "DISABLED")} for '{Model.Name}'");
                     CheckInfoAiLoop();
                 }
             };
@@ -143,12 +174,24 @@ namespace MultiRtspViewer.ViewModels
 
                             // 3. Update UI
                             // Filter by what user wants (Person/Vehicle)
+                            // Added 'motorcycle' and 'bicycle' to vehicles for common street scenes
                             var filtered = results.Where(r => 
                                 (Model.DetectPerson && r.Label == "person") ||
-                                (Model.DetectVehicle && (r.Label == "car" || r.Label == "truck" || r.Label == "bus"))
+                                (Model.DetectVehicle && (r.Label == "car" || r.Label == "truck" || r.Label == "bus" || r.Label == "motorcycle" || r.Label == "bicycle"))
                             ).ToList();
 
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            if (filtered.Count > 0)
+                            {
+                                // Show first few detections in the system log for confirmation
+                                if (Detections.Count == 0) // Only log when detections first appear
+                                {
+                                    var summary = string.Join(", ", filtered.GroupBy(d => d.Label).Select(g => $"{g.Count()} {g.Key}"));
+                                    _logService?.LogAi($"[{Model.Name}] AI Alert: Detected {summary}");
+                                }
+                            }
+
+                            // Use Dispatcher to update the observable collection
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 Detections.Clear();
                                 foreach(var d in filtered) Detections.Add(d);
@@ -157,6 +200,10 @@ namespace MultiRtspViewer.ViewModels
 
                         // Cleanup
                         try { System.IO.File.Delete(_snapshotPath); } catch { }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"AI: Snapshot failed for {Model.Name}");
                     }
 
                     // Throttle (5 FPS max)
@@ -281,6 +328,7 @@ namespace MultiRtspViewer.ViewModels
                         media.AddOption($":clock-jitter={_settings.ClockJitter}");
                         media.AddOption(":clock-synchro=0");
                         media.AddOption(":no-video-title-show");
+                        media.AddOption(":no-osd");  // Disable On-Screen Display (prevents snapshot path overlay)
 
                         if (_settings.UseHardwareAcceleration)
                         {

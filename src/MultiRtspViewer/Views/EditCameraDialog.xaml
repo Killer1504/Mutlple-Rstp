@@ -178,21 +178,49 @@
 
                 <!-- AI Toggle -->
                 <Border Background="#1e293b" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,15">
-                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                     <StackPanel>
+                        <!-- Enable AI -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="ENABLE AI DETECTION" Foreground="#22d3ee" FontSize="11" FontWeight="Bold"/>
+                                <TextBlock Text="Detect people &amp; vehicles" Foreground="#64748b" FontSize="10"/>
+                            </StackPanel>
+                            <CheckBox Grid.Column="1" IsChecked="{Binding IsAiEnabled}" VerticalAlignment="Center" Margin="10,0,0,0">
+                                <CheckBox.LayoutTransform>
+                                    <ScaleTransform ScaleX="1.2" ScaleY="1.2"/>
+                                </CheckBox.LayoutTransform>
+                            </CheckBox>
+                        </Grid>
+                        
+                        <!-- Detection Options -->
                         <StackPanel>
-                            <TextBlock Text="ENABLE AI DETECTION" Foreground="#22d3ee" FontSize="11" FontWeight="Bold"/>
-                            <TextBlock Text="Detect people &amp; vehicles" Foreground="#64748b" FontSize="10"/>
+                            <Border Height="1" Background="#334155" Margin="0,0,0,10"/>
+                            
+                            <!-- Detect Person -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Detect Person" Foreground="#94a3b8" FontSize="10" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding DetectPerson}" VerticalAlignment="Center"/>
+                            </Grid>
+                            
+                            <!-- Detect Vehicle -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Detect Vehicle" Foreground="#94a3b8" FontSize="10" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding DetectVehicle}" VerticalAlignment="Center"/>
+                            </Grid>
                         </StackPanel>
-                        <CheckBox Grid.Column="1" IsChecked="{Binding IsAiEnabled}" VerticalAlignment="Center" Margin="10,0,0,0">
-                            <CheckBox.LayoutTransform>
-                                <ScaleTransform ScaleX="1.2" ScaleY="1.2"/>
-                            </CheckBox.LayoutTransform>
-                        </CheckBox>
-                    </Grid>
+                    </StackPanel>
                 </Border>
 
                 <!-- Examples -->

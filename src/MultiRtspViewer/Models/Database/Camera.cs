@@ -25,5 +25,10 @@ namespace MultiRtspViewer.Models.Database
 
         // Optional metadata
         public string Status { get; set; } = "Offline"; 
+
+        // AI Configuration (Added for AI Detection feature)
+        public bool IsAiEnabled { get; set; } = false;
+        public bool DetectPerson { get; set; } = true;
+        public bool DetectVehicle { get; set; } = false;
     }
 }

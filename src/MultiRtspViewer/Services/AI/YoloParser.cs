@@ -21,7 +21,7 @@ namespace MultiRtspViewer.Services.AI
             "hair drier", "toothbrush"
         };
 
-        public List<DetectionResult> Parse(float[] output, int dimensions, int rows, float confidenceThreshold = 0.3f)
+        public List<DetectionResult> Parse(float[] output, int dimensions, int rows, float confidenceThreshold = 0.2f)
         {
             // Output layout is usually [1, 4+Classes, 8400]
             // We receive it flattened, but conceptually it's Transposed? 
@@ -43,12 +43,10 @@ namespace MultiRtspViewer.Services.AI
                 // Classes start at index 4
                 for (int c = 0; c < numChannels - 4; c++)
                 {
-                    // Access items in column-major-like format if flattened by C# usually:
-                    // But usually FloatArray output is standard row-major.
-                    // Let's assume standard [1, 84, 8400] flattening:
-                    // index = (channel * numAnchors) + anchorIndex
-                    
-                    float score = output[((4 + c) * numAnchors) + i];
+                    int index = ((4 + c) * numAnchors) + i;
+                    if (index >= output.Length) continue;
+
+                    float score = output[index];
                     if (score > maxScore)
                     {
                         maxScore = score;
@@ -58,20 +56,31 @@ namespace MultiRtspViewer.Services.AI
 
                 if (maxScore < confidenceThreshold) continue;
 
-                // Extract Box
-                float x = output[(0 * numAnchors) + i];
-                float y = output[(1 * numAnchors) + i];
-                float w = output[(2 * numAnchors) + i];
-                float h = output[(3 * numAnchors) + i];
+                // Extract Box indices with safety
+                int xIdx = (0 * numAnchors) + i;
+                int yIdx = (1 * numAnchors) + i;
+                int wIdx = (2 * numAnchors) + i;
+                int hIdx = (3 * numAnchors) + i;
+
+                if (hIdx >= output.Length) continue;
+
+                float x = output[xIdx];
+                float y = output[yIdx];
+                float w = output[wIdx];
+                float h = output[hIdx];
 
                 // YOLO returns center (x,y) and width/height relative to 640 image
                 // We convert to top-left (x,y)
                 float xMin = x - (w / 2);
                 float yMin = y - (h / 2);
 
+                // Sanitize coordinates and sizes for WPF (no negatives or NaN)
+                float sanitizedW = Math.Max(0, w);
+                float sanitizedH = Math.Max(0, h);
+
                 if (maxClassId >= 0 && maxClassId < Labels.Length)
                 {
-                    detections.Add(new DetectionResult(Labels[maxClassId], maxScore, xMin, yMin, w, h));
+                    detections.Add(new DetectionResult(Labels[maxClassId], maxScore, xMin, yMin, sanitizedW, sanitizedH));
                 }
             }
 
